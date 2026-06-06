@@ -1,0 +1,5 @@
+TP53	AnnotateX	exon	1	128	.	+	.	gene_id "TP53"; transcript_id "TP53.1";
+BCL2	AnnotateX	exon	1	128	.	+	.	gene_id "BCL2"; transcript_id "BCL2.1";
+MYC	AnnotateX	exon	1	128	.	+	.	gene_id "MYC"; transcript_id "MYC.1";
+BRCA1	AnnotateX	exon	1	128	.	+	.	gene_id "BRCA1"; transcript_id "BRCA1.1";
+EGFR	AnnotateX	exon	1	128	.	+	.	gene_id "EGFR"; transcript_id "EGFR.1";

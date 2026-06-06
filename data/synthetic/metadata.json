@@ -1,0 +1,6 @@
+{
+  "n_genes": 2000,
+  "n_significant": 584,
+  "omics_type": "rna-seq",
+  "seed": 42
+}

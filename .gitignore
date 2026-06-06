@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ML artifacts
+checkpoints/
+lightning_logs/
+results/
+uploads/
+
+# Data & reference indexes (regenerated at runtime)
+data/reference/star_index/
+data/reference/*.bwt
+data/reference/*.amb
+data/reference/*.ann
+data/reference/*.pac
+data/reference/*.sa
+
+# IDE / Studio
+.cursor/
+.cursor-server/
+.vscode/
+.vscode-server/
+.windsurf-server/
+.idea/
+.cache/
+.lightning/
+.lightning_studio/.studiorc
+
+# OS / shell
+.bash_history
+.zcompdump*
+*.log
