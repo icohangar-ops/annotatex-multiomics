@@ -10,3 +10,4 @@ gradio>=4.0.0
 pydeseq2>=0.4.0
 biopython>=1.83
 pysam>=0.22.0
+cubiczan-resilience @ git+https://github.com/icohangar-ops/cubiczan-resilience.git#subdirectory=python

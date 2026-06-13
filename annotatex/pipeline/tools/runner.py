@@ -7,6 +7,8 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from cubiczan_resilience import resilient
+
 
 @dataclass
 class StepResult:
@@ -21,11 +23,24 @@ class StepResult:
 
 
 class ToolRunner:
-    def __init__(self, work_dir: Path, timeout: int = 600):
+    def __init__(self, work_dir: Path, timeout: int = 600, per_tool_timeout: int = 300):
         self.work_dir = Path(work_dir)
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.timeout = timeout
+        # Per-tool ceiling so a single tool can't consume the whole global budget.
+        self.per_tool_timeout = min(per_tool_timeout, timeout)
         self.steps: list[StepResult] = []
+
+    @resilient(timeout=300, max_attempts=3)
+    def _invoke(self, command: list[str], timeout: int) -> subprocess.CompletedProcess:
+        """Run the subprocess once; raises on timeout so @resilient retries with backoff."""
+        return subprocess.run(
+            command,
+            cwd=self.work_dir,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
 
     def run(self, tool: str, command: list[str], outputs: list[Path] | None = None) -> StepResult:
         start = time.time()
@@ -33,13 +48,7 @@ class ToolRunner:
         cmd_str = " ".join(command)
 
         try:
-            proc = subprocess.run(
-                command,
-                cwd=self.work_dir,
-                capture_output=True,
-                text=True,
-                timeout=self.timeout,
-            )
+            proc = self._invoke(command, self.per_tool_timeout)
             log_path.write_text(f"$ {cmd_str}\n\nSTDOUT:\n{proc.stdout}\n\nSTDERR:\n{proc.stderr}")
             status = "completed" if proc.returncode == 0 else "failed"
             result = StepResult(
@@ -58,7 +67,7 @@ class ToolRunner:
                 command=cmd_str,
                 status="failed",
                 duration_seconds=round(time.time() - start, 2),
-                error=f"Timeout after {self.timeout}s: {exc}",
+                error=f"Timeout after {self.per_tool_timeout}s (per-tool ceiling): {exc}",
             )
         except FileNotFoundError:
             result = StepResult(
