@@ -9,6 +9,8 @@ from pathlib import Path
 
 from cubiczan_resilience import resilient
 
+from annotatex.pipeline.tools.daytona_backend import DaytonaToolBackend
+
 
 @dataclass
 class StepResult:
@@ -34,6 +36,9 @@ class ToolRunner:
     @resilient(timeout=300, max_attempts=3)
     def _invoke(self, command: list[str], timeout: int) -> subprocess.CompletedProcess:
         """Run the subprocess once; raises on timeout so @resilient retries with backoff."""
+        if DaytonaToolBackend.enabled():
+            exit_code, stdout, stderr = DaytonaToolBackend.run(command, self.work_dir, timeout)
+            return subprocess.CompletedProcess(command, exit_code, stdout, stderr)
         return subprocess.run(
             command,
             cwd=self.work_dir,

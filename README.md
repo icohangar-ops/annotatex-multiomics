@@ -136,6 +136,10 @@ python app.py
 
 ## Bioinformatics Tools
 
+### Daytona sandbox (optional)
+
+Export `DAYTONA_API_KEY` to run bioinformatics CLI commands inside an isolated Daytona VM. The pipeline uploads the work directory before each tool step. Bio tools must be present in the sandbox image or commands will be skipped as today.
+
 Install all tools:
 
 ```bash
