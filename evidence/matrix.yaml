@@ -1,0 +1,290 @@
+# Evidence matrix — annotatex-multiomics (schema v1, art_6m9smoMm)
+#
+# Every capability claim stated in README.md is bound here to deterministic
+# evidence: a pytest node id the CI `tests` job executes, a stdlib-only script
+# this verifier runs in-repo (hard 120s timeout, no network), a pinned manifest
+# field, or the sha256 of a committed artifact. `python3
+# tools/verify_evidence_matrix.py` refuses — fail-closed — while any row is
+# unverifiable. The matrix stores claims and evidence only; the verifier's
+# output on each run IS the status.
+
+schema_version: 1
+repo: "annotatex-multiomics"
+
+claims:
+  # --- Overview: stage table -------------------------------------------------
+  - id: C001
+    claim: "Data detection auto-identifies RNA-seq, ChIP-seq, WGS and scRNA-seq from file format and column signatures (rule-based + column signatures)."
+    source: "README.md#overview"
+    evidence:
+      - type: test
+        ref: "tests/test_detector.py::test_detects_deseq2_expression_csv"
+      - type: test
+        ref: "tests/test_detector.py::test_detects_chip_seq_peak_table"
+      - type: test
+        ref: "tests/test_detector.py::test_detects_wgs_variant_table"
+      - type: test
+        ref: "tests/test_detector.py::test_detects_scrna_10x_directory"
+
+  - id: C002
+    claim: "QC stage runs statistical checks on expression matrices and FASTQ inputs (per-sample quality metrics) in addition to the FastQC tool step."
+    source: "README.md#overview"
+    evidence:
+      - type: test
+        ref: "tests/test_qc.py::test_expression_qc_pass"
+      - type: test
+        ref: "tests/test_qc.py::test_fastq_qc_reads"
+
+  - id: C003
+    claim: "DE analysis performs differential expression via PyDESeq2 (Wald test) from count matrices."
+    source: "README.md#overview"
+    evidence:
+      - type: test
+        ref: "tests/test_deseq2.py::test_pydeseq2_wald_on_demo_counts"
+
+  - id: C004
+    claim: "Annotation stage applies a PyTorch Lightning model for gene-level annotation with Monte Carlo dropout confidence scores."
+    source: "README.md#overview"
+    evidence:
+      - type: test
+        ref: "tests/test_model_contract.py::test_module_default_architecture"
+      - type: test
+        ref: "tests/test_model_contract.py::test_predict_with_confidence_shapes_and_ranges"
+
+  - id: C005
+    claim: "The UI stage is a Gradio drag-and-drop pipeline runner (upload, live tool log, gene table, HTML report download)."
+    source: "README.md#overview"
+    evidence:
+      - type: script
+        ref: "scripts/verify_ui_contract.py"
+
+  # --- Features table --------------------------------------------------------
+  - id: C006
+    claim: "Real FastQC runs as subprocess execution with summary.txt parsing."
+    source: "README.md#features"
+    evidence:
+      - type: test
+        ref: "tests/test_parsers.py::test_parse_fastqc_summary_all_pass"
+      - type: test
+        ref: "tests/test_parsers.py::test_parse_fastqc_summary_missing_report"
+
+  - id: C007
+    claim: "Real samtools runs flagstat on BAM files and the output is parsed into metrics."
+    source: "README.md#features"
+    evidence:
+      - type: test
+        ref: "tests/test_parsers.py::test_parse_flagstat"
+
+  - id: C008
+    claim: "Real PyDESeq2 runs the full Wald-test DE from count matrices."
+    source: "README.md#features"
+    evidence:
+      - type: test
+        ref: "tests/test_deseq2.py::test_pydeseq2_wald_on_demo_counts"
+      - type: test
+        ref: "tests/test_input_routing.py::test_counts_matrix_routes_to_deseq2"
+
+  - id: C009
+    claim: "Lightning ML performs multi-task DE + GO annotation with MC dropout confidence."
+    source: "README.md#features"
+    evidence:
+      - type: script
+        ref: "scripts/verify_model_contract.py"
+      - type: test
+        ref: "tests/test_model_contract.py::test_predict_with_confidence_shapes_and_ranges"
+
+  - id: C010
+    claim: "Auto detection covers FASTQ, BAM, count matrix and DESeq2 results CSV inputs."
+    source: "README.md#features"
+    evidence:
+      - type: test
+        ref: "tests/test_detector.py::test_detects_fastq"
+      - type: test
+        ref: "tests/test_detector.py::test_detects_bam_file"
+      - type: test
+        ref: "tests/test_detector.py::test_detects_count_matrix"
+      - type: test
+        ref: "tests/test_detector.py::test_detects_deseq2_expression_csv"
+
+  - id: C011
+    claim: "The tool registry reports installed/missing tools with install hints."
+    source: "README.md#features"
+    evidence:
+      - type: script
+        ref: "scripts/verify_registry_surface.py"
+      - type: test
+        ref: "tests/test_registry.py::test_status_report_shape"
+      - type: test
+        ref: "tests/test_registry.py::test_install_hints_present"
+
+  # --- Quick Start / CLI Reference -------------------------------------------
+  - id: C012
+    claim: "python train.py --generate trains the Lightning model and copies the best checkpoint to checkpoints/annotatex-best.ckpt."
+    source: "README.md#quick-start"
+    evidence:
+      - type: script
+        ref: "scripts/verify_cli_surface.py"
+
+  - id: C013
+    claim: "python app.py launches the Gradio UI on port 7860."
+    source: "README.md#quick-start"
+    evidence:
+      - type: script
+        ref: "scripts/verify_ui_contract.py"
+
+  - id: C014
+    claim: "python pipeline.py runs the CLI pipeline with --data/--type/--dry-run/--skip-bio/--max-genes/--verbose flags."
+    source: "README.md#quick-start"
+    evidence:
+      - type: script
+        ref: "scripts/verify_cli_surface.py"
+
+  # --- Bioinformatics Tools --------------------------------------------------
+  - id: C015
+    claim: "An optional Daytona sandbox executes bioinformatics CLI commands in an isolated VM: the work directory is uploaded before each tool step, the backend is gated on DAYTONA_API_KEY (and DAYTONA_DISABLE), and locally missing tools are skipped rather than failing the run."
+    source: "README.md#bioinformatics-tools"
+    evidence:
+      - type: test
+        ref: "tests/test_daytona_runner.py::TestDaytonaBackend::test_disabled_without_key"
+      - type: test
+        ref: "tests/test_daytona_runner.py::TestDaytonaBackend::test_enabled_with_key"
+      - type: test
+        ref: "tests/test_daytona_runner.py::TestDaytonaBackend::test_disable_flag"
+      - type: script
+        ref: "scripts/verify_daytona_wiring.py"
+
+  - id: C016
+    claim: "A one-command installer script exists for the supported bioinformatics tools and prints the registry tool status when it finishes."
+    source: "README.md#bioinformatics-tools"
+    evidence:
+      - type: script
+        ref: "scripts/verify_project_layout.py"
+
+  - id: C017
+    claim: "Tool status is available programmatically via annotatex.pipeline.tools.registry.get_tool_status."
+    source: "README.md#bioinformatics-tools"
+    evidence:
+      - type: script
+        ref: "scripts/verify_registry_surface.py"
+
+  # --- Pipeline flows by input type ------------------------------------------
+  - id: C018
+    claim: "FASTQ input runs FastQC, then demo counts (or alignment-derived counts when aligners are installed), then PyDESeq2, producing a DE results CSV."
+    source: "README.md#bioinformatics-tools"
+    evidence:
+      - type: test
+        ref: "tests/test_parsers.py::test_parse_fastqc_summary_all_pass"
+      - type: test
+        ref: "tests/test_deseq2.py::test_pydeseq2_wald_on_demo_counts"
+
+  - id: C019
+    claim: "Count matrix + metadata input runs PyDESeq2 and produces a DE results CSV."
+    source: "README.md#bioinformatics-tools"
+    evidence:
+      - type: test
+        ref: "tests/test_deseq2.py::test_pydeseq2_wald_on_demo_counts"
+      - type: test
+        ref: "tests/test_input_routing.py::test_counts_matrix_routes_to_deseq2"
+
+  - id: C020
+    claim: "DESeq2 results CSV input skips the DE step and goes directly to ML."
+    source: "README.md#bioinformatics-tools"
+    evidence:
+      - type: test
+        ref: "tests/test_input_routing.py::test_expression_csv_routes_without_rerunning_de"
+
+  - id: C021
+    claim: "BAM input runs samtools flagstat, then featureCounts, then PyDESeq2."
+    source: "README.md#bioinformatics-tools"
+    evidence:
+      - type: test
+        ref: "tests/test_parsers.py::test_parse_flagstat"
+      - type: test
+        ref: "tests/test_input_routing.py::test_fastq_and_bam_routing"
+
+  # --- ML Model --------------------------------------------------------------
+  - id: C022
+    claim: "AnnotateXModule is a multi-task classifier with a 6-feature input, a shared MLP encoder (two 128-unit hidden layers) with BatchNorm/ReLU/dropout, a binary DE head and a 10-label GO head."
+    source: "README.md#ml-model"
+    evidence:
+      - type: test
+        ref: "tests/test_model_contract.py::test_module_default_architecture"
+      - type: script
+        ref: "scripts/verify_model_contract.py"
+
+  - id: C023
+    claim: "Training uses AdamW with ReduceLROnPlateau and early stopping on val loss."
+    source: "README.md#ml-model"
+    evidence:
+      - type: test
+        ref: "tests/test_model_contract.py::test_configure_optimizers_contract"
+      - type: script
+        ref: "scripts/verify_model_contract.py"
+
+  - id: C024
+    claim: "Confidence scores come from 20-pass Monte Carlo dropout at inference."
+    source: "README.md#ml-model"
+    evidence:
+      - type: script
+        ref: "scripts/verify_model_contract.py"
+      - type: test
+        ref: "tests/test_model_contract.py::test_predict_with_confidence_shapes_and_ranges"
+
+  - id: C025
+    claim: "Tracked metrics are DE accuracy and F1 plus GO macro-F1."
+    source: "README.md#ml-model"
+    evidence:
+      - type: script
+        ref: "scripts/verify_model_contract.py"
+
+  # --- Input Formats / committed dataset --------------------------------------
+  - id: C026
+    claim: "The committed synthetic dataset is DESeq2-style RNA-seq output for 2,000 genes generated with seed 42."
+    source: "README.md#input-formats"
+    evidence:
+      - type: manifest_field
+        ref: "data/synthetic/metadata.json:n_genes"
+        equals: 2000
+      - type: manifest_field
+        ref: "data/synthetic/metadata.json:omics_type"
+        equals: "rna-seq"
+      - type: manifest_field
+        ref: "data/synthetic/metadata.json:seed"
+        equals: 42
+      - type: artifact_hash
+        ref: "data/synthetic/expression.csv"
+        sha256: "79c0078e23419428ddfe8ccb074659dfbc56319530e6af3f6d3f086f6492d85b"
+
+  # --- Sample Output ----------------------------------------------------------
+  - id: C027
+    claim: "The pipeline result JSON carries status, run_id, data_type, n_genes, n_de_genes, qc_status, bio pipeline steps and report_html, and each run writes report.html and report.json."
+    source: "README.md#sample-output"
+    evidence:
+      - type: script
+        ref: "scripts/verify_orchestrator_output_shape.py"
+
+  # --- Project Structure ------------------------------------------------------
+  - id: C028
+    claim: "The repository layout matches the documented structure (annotatex package modules, CLI entry points, installer script)."
+    source: "README.md#project-structure"
+    evidence:
+      - type: script
+        ref: "scripts/verify_project_layout.py"
+
+  # --- Deterministic demo artifacts -------------------------------------------
+  - id: C029
+    claim: "Deterministic demo artifacts ship in-tree: demo FASTQ, mini reference genome and GTF, and the synthetic expression/annotations pair."
+    source: "README.md#input-formats"
+    evidence:
+      - type: artifact_hash
+        ref: "data/demo/sample.fastq"
+        sha256: "d28e83227139b0a044e660bc030514d016420a1030720c225f1c3c3fd2faaa69"
+      - type: artifact_hash
+        ref: "data/reference/mini_genome.fa"
+        sha256: "787e800f4db15b9c39747266a047ca435f2469b351f11fe83e4ee81279f8ed0f"
+      - type: artifact_hash
+        ref: "data/reference/mini_genes.gtf"
+        sha256: "9da02be0f0ed6a52fcf5326d3eeea2b8993452685998ddcfba79ed53081f9e33"
+      - type: artifact_hash
+        ref: "data/synthetic/annotations.csv"
+        sha256: "f20290a469e910ade6aa445216f15729c22f070a8f5feae5189c3ac312cabbc8"
