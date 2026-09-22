@@ -29,3 +29,32 @@ jobs:
           print("\n".join(bad))
           sys.exit(1 if bad else 0)
           PYEOF
+
+  # Fail-closed evidence verification. Runs before any install step: the
+  # matrix must be verifiable on a bare checkout with zero dependencies.
+  evidence-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify evidence matrix (no install step precedes this)
+        run: python3 tools/verify_evidence_matrix.py
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install CPU torch first (same pinned version, smaller wheels)
+        run: pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Install test dependencies (curated subset)
+        # requirements.txt as committed is unresolvable: gradio==6.20.0 conflicts
+        # with the tomlkit==0.15.1 pin carried by cubiczan-resilience. No test
+        # imports gradio (app.py is not imported), so the suite installs the
+        # subset it actually exercises.
+        run: |
+          pip install torchmetrics lightning pandas numpy==2.5.2 scikit-learn jinja2 pydeseq2 biopython==1.88 pysam daytona pytest
+          pip install "cubiczan-resilience @ git+https://github.com/icohangar-ops/cubiczan-resilience.git#subdirectory=python"
+      - name: Run test suite
+        run: pytest tests/ -v

@@ -166,10 +166,10 @@ print(get_tool_status())
 
 | Input | Tools executed | Output |
 |-------|---------------|--------|
-| FASTQ | FastQC → demo counts → PyDESeq2 | DE results CSV |
+| FASTQ | FastQC → demo/alignment counts → PyDESeq2 | DE results CSV |
 | Count matrix + metadata | PyDESeq2 | DE results CSV |
 | DESeq2 results CSV | (skip DE) | Direct to ML |
-| BAM | samtools flagstat → PyDESeq2 | DE results CSV |
+| BAM | samtools flagstat → featureCounts → PyDESeq2 | DE results CSV |
 
 ---
 
@@ -337,6 +337,16 @@ python app.py
 | Pipeline timeout on large FASTQ | FastQC slow on big files | Subsample reads or use pre-computed counts |
 
 ---
+
+## Evidence Matrix
+
+Every capability claim in this file is backed by `evidence/matrix.yaml`; CI refuses builds while any row is unverifiable. Run it yourself:
+
+```bash
+python3 tools/verify_evidence_matrix.py
+```
+
+`tools/verify_evidence_matrix.py` is a version-stamped, byte-identical vendored copy of the canonical stdlib-only implementation in [`consensus-hardening-protocol`](https://github.com/icohangar-ops/consensus-hardening-protocol) (`EVIDENCE_MATRIX_VERIFIER_VERSION = 1.0.0`, vendored from kit commit `88067e4`).
 
 ## Hackathon Submission
 
